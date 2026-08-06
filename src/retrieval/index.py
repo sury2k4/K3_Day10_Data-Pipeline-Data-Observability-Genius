@@ -48,18 +48,18 @@ class LocalEmbeddingIndex:
             documents.append(
                 {
                     "record_id": f"{row['paper_id']}::{index}",
-                    "paper_id": row["paper_id"],
-                    "title": row["title"],
-                    "content": row["text_for_embedding"],
+                    "paper_id": str(row.get("paper_id") or ""),
+                    "title": str(row.get("title") or ""),
+                    "content": str(row.get("text_for_embedding") or ""),
                     "metadata": {
-                        "paper_id": row["paper_id"],
-                        "title": row["title"],
-                        "published": row["published"],
-                        "authors_joined": row["authors_joined"],
-                        "categories_joined": row["categories_joined"],
-                        "summary": row["summary"],
-                        "abs_url": row["abs_url"],
-                        "pdf_url": row["pdf_url"],
+                        "paper_id": str(row.get("paper_id") or ""),
+                        "title": str(row.get("title") or ""),
+                        "published": str(row.get("published") or ""),
+                        "authors_joined": str(row.get("authors_joined") or ""),
+                        "categories_joined": str(row.get("categories_joined") or ""),
+                        "summary": str(row.get("summary") or ""),
+                        "abs_url": str(row.get("abs_url") or ""),
+                        "pdf_url": str(row.get("pdf_url") or ""),
                     },
                 }
             )
@@ -100,7 +100,7 @@ class LocalEmbeddingIndex:
             pass
         collection = client.create_collection(
             name=collection_name,
-            configuration={"hnsw": {"space": "cosine"}},
+            metadata={"hnsw:space": "cosine"},
         )
         embeddings = embedding_model.embed_documents([document["content"] for document in documents])
         collection.add(

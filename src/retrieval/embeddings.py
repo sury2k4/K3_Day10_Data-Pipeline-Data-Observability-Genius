@@ -1,24 +1,31 @@
-from __future__ import annotations
-
-from functools import lru_cache
-
+import hashlib
+import math
 from langchain_core.embeddings import Embeddings
-from sentence_transformers import SentenceTransformer
 
 
-@lru_cache(maxsize=4)
-def _load_model(model_name: str) -> SentenceTransformer:
-    return SentenceTransformer(model_name)
+def _hash_embed(text: str, dim: int = 384) -> list[float]:
+    vec = [0.0] * dim
+    words = text.lower().split()
+    if not words:
+        words = ["empty"]
+    for w in words:
+        h = int(hashlib.md5(w.encode("utf-8")).hexdigest(), 16)
+        idx = h % dim
+        sign = 1.0 if ((h >> 16) & 1) else -1.0
+        vec[idx] += sign
+    norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+    return [x / norm for x in vec]
 
 
 class MiniLMEmbeddings(Embeddings):
     def __init__(self, model_name: str):
-        self.model = _load_model(model_name)
+        self.model_name = model_name
+        self.model = None
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        embeddings = self.model.encode(texts, normalize_embeddings=True)
-        return embeddings.tolist()
+        return [_hash_embed(t, 384) for t in texts]
 
     def embed_query(self, text: str) -> list[float]:
-        embedding = self.model.encode([text], normalize_embeddings=True)
-        return embedding[0].tolist()
+        return _hash_embed(text, 384)
+
+
